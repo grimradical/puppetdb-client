@@ -7,8 +7,6 @@
 ;; Replace "baseurl" in api-call with a proper map of params for using
 ;; the connection
 ;;
-;; Need to serialize query parameters to JSON (especially "query")
-;;
 ;; Need connection timout and total timeout (possible?)
 
 (defn serialize-query-param
