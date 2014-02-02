@@ -7,7 +7,7 @@
 ;; Replace "baseurl" in api-call with a proper map of params for using
 ;; the connection
 ;;
-;; Need connection timout and total timeout (possible?)
+;; HTTPS support (client certs, etc)
 
 (defn serialize-query-param
   [params]
@@ -16,9 +16,11 @@
     params))
 
 (defn api-call [baseurl path params]
-  (let [response (client/get (str baseurl "/" path)
-                             {:query-params (serialize-query-param params)
-                              :as           :json})]
+  (let [conn-params {:connect-timeout 10
+                     :socket-timeout  60
+                     :as              :json
+                     :query-params    (serialize-query-param params)}
+        response    (client/get (str baseurl "/" path) conn-params)]
     (:body response)))
 
 (defn api-func
