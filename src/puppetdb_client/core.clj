@@ -66,27 +66,6 @@
 
     (apply node-facts (concat opts [{}]))))
 
-(defn node-facts
-  [& opts]
-  (if (map? (last opts))
-    (let [params (last opts)
-          db     (first opts)
-          args   (rest (butlast opts))
-          n-args (count args)]
-      (condp = n-args
-        1
-        (api-call db (format "v3/nodes/%s/facts" (first args)) params)
-
-        2
-        (api-call db (format "v3/nodes/%s/facts/%s" (first args) (second args)) params)
-
-        3
-        (api-call db (format "v3/nodes/%s/facts/%s/%s" (first args) (second args) (nth 2 args)) params)
-
-        (throw (IllegalArgumentException. "Too many args"))))
-
-    (apply node-facts (concat opts [{}]))))
-
 (defn node-resources
   [& opts]
   (if (map? (last opts))
