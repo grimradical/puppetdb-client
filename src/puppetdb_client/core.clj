@@ -8,6 +8,8 @@
 ;; the connection
 ;;
 ;; Need to serialize query parameters to JSON (especially "query")
+;;
+;; Need connection timout and total timeout (possible?)
 
 (defn serialize-query-param
   [params]
@@ -21,127 +23,58 @@
                               :as           :json})]
     (:body response)))
 
-(defn nodes
-  ([db]
-     (nodes db {}))
-  ([db params]
-     (api-call db "v3/nodes" params)))
+(defn api-func
+  [urls]
+  (let [url-map (into {} (for [url urls]
+                           [(count (re-seq #"%s" url)) url]))]
+    (fn [& opts]
+      (if (map? (last opts))
+        (let [params  (last opts)
+              db      (first opts)
+              args    (rest (butlast opts))
+              n-args  (count args)
+              url     (url-map n-args)]
+          (api-call db (apply format url args) params))
+        (recur (concat opts [{}]))))))
 
-(defn catalog
-  [db node]
-  (api-call db (format "v3/catalogs/%s" node) {}))
+(def nodes
+  (api-func ["v3/nodes"
+             "v3/nodes/%s"]))
 
-(defn server-time
-  [db]
-  (api-call db "v3/server-time" {}))
+(def metrics
+  (api-func ["/v3/metrics/mbeans"
+             "/v3/metrics/mbean/%s"]))
 
-(defn version
-  [db]
-  (api-call db "v3/version" {}))
+(def node-facts
+  (api-func ["v3/nodes/%s/facts"
+             "v3/nodes/%s/facts/%s"
+             "v3/nodes/%s/facts/%s/%s"]))
 
-(defn metrics
-  ([db]
-     (api-call db "/v3/metrics/mbeans" {}))
-  ([db metric]
-     (api-call db (format "v3/metrics/mbean/%s" metric) {})))
+(def node-resources
+  (api-func ["v3/nodes/%s/resources"
+             "v3/nodes/%s/resources/%s"
+             "v3/nodes/%s/resources/%s/%s"]))
 
-(defn node-facts
-  [& opts]
-  (if (map? (last opts))
-    (let [params (last opts)
-          db     (first opts)
-          args   (rest (butlast opts))
-          n-args (count args)]
-      (condp = n-args
-        1
-        (api-call db (format "v3/nodes/%s/facts" (first args)) params)
+(def facts
+  (api-func ["v3/facts"
+             "v3/facts/%s"
+             "v3/facts/%s/%s"]))
 
-        2
-        (api-call db (format "v3/nodes/%s/facts/%s" (first args) (second args)) params)
+(def resources
+  (api-func ["v3/resources"
+             "v3/resources/%s"
+             "v3/resources/%s/%s"]))
 
-        3
-        (api-call db (format "v3/nodes/%s/facts/%s/%s" (first args) (second args) (nth 2 args)) params)
+(def catalog (api-func ["v3/catalogs/%s"]))
 
-        (throw (IllegalArgumentException. "Too many args"))))
+(def server-time (api-func ["v3/server-time"]))
 
-    (apply node-facts (concat opts [{}]))))
+(def version (api-func ["v3/version"]))
 
-(defn node-resources
-  [& opts]
-  (if (map? (last opts))
-    (let [params (last opts)
-          db     (first opts)
-          args   (rest (butlast opts))
-          n-args (count args)]
-      (condp = n-args
-        1
-        (api-call db (format "v3/nodes/%s/resources" (first args)) params)
+(def reports (api-func ["v3/reports"]))
 
-        2
-        (api-call db (format "v3/nodes/%s/resources/%s" (first args) (second args)) params)
+(def events (api-func ["v3/reports"]))
 
-        3
-        (api-call db (format "v3/nodes/%s/resources/%s/%s" (first args) (second args) (nth args 2)) params)
+(def event-counts (api-func ["v3/reports"]))
 
-        (throw (IllegalArgumentException. "Too many args"))))
-
-    (apply node-resources (concat opts [{}]))))
-
-(defn facts
-  [& opts]
-  (if (map? (last opts))
-    (let [params (last opts)
-          db     (first opts)
-          args   (rest (butlast opts))
-          n-args (count args)]
-      (condp = n-args
-        0
-        (api-call db (format "v3/facts" (first args)) params)
-
-        1
-        (api-call db (format "v3/facts/%s" (first args)) params)
-
-        2
-        (api-call db (format "v3/facts/%s/%s" (first args) (second args)) params)
-
-        (throw (IllegalArgumentException. "Too many args"))))
-
-    (apply facts (concat opts [{}]))))
-
-
-(defn resources
-  [& opts]
-  (if (map? (last opts))
-    (let [params (last opts)
-          db     (first opts)
-          args   (rest (butlast opts))
-          n-args (count args)]
-      (condp = n-args
-        0
-        (api-call db (format "v3/resources" (first args)) params)
-
-        1
-        (api-call db (format "v3/resources/%s" (first args)) params)
-
-        2
-        (api-call db (format "v3/resources/%s/%s" (first args) (second args)) params)
-
-        (throw (IllegalArgumentException. "Too many args"))))
-
-    (apply resources (concat opts [{}]))))
-
-(defn reports
-  [db params]
-  (api-call db "/v3/reports" params))
-
-(defn events
-  [db params]
-  (api-call db "/v3/events" params))
-
-(defn event-counts
-  [db params]
-  (api-call db "/v3/event-counts" params))
-
-(defn aggregate-event-counts
-  [db params]
-  (api-call db "/v3/aggregate-event-counts" params))
+(def aggregate-event-counts (api-func ["v3/reports"]))
