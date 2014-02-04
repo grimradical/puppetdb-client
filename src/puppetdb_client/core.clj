@@ -73,8 +73,8 @@
 
 (def reports (api-func ["v3/reports"]))
 
-(def events (api-func ["v3/reports"]))
+(def events (api-func ["v3/events"]))
 
-(def event-counts (api-func ["v3/reports"]))
+(def event-counts (api-func ["v3/event-counts"]))
 
-(def aggregate-event-counts (api-func ["v3/reports"]))
+(def aggregate-event-counts (api-func ["v3/aggregate-event-counts"]))
